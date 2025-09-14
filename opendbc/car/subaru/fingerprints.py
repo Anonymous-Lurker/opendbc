@@ -234,11 +234,14 @@ FW_VERSIONS = {
     ],
     (Ecu.fwdCamera, 0x787, None): [
       b'\x00\x00el\x1f@ #',
+      b'\x00\x00el\x00\x00\x00\x00',
     ],
     (Ecu.engine, 0x7e0, None): [
       b'\xd7!`@\x07',
       b'\xd7!`p\x07',
+      b'\xd7!`p\a',
       b'\xf4!`0\x07',
+      b'\xe9\xf5B0\x00',
     ],
   },
   CAR.SUBARU_FORESTER: {
