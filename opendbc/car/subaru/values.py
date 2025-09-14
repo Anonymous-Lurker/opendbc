@@ -57,7 +57,6 @@ class SubaruSafetyFlags(IntFlag):
   GEN2 = 1
   LONG = 2
   PREGLOBAL_REVERSED_DRIVER_TORQUE = 4
-  CROSSTREK_HYBRID = 8
 
 
 class SubaruFlags(IntFlag):
@@ -73,8 +72,7 @@ class SubaruFlags(IntFlag):
   STEER_RATE_LIMITED = 8
   PREGLOBAL = 16
   HYBRID = 32
-  CROSSTREK_HYBRID = 64
-  LKAS_ANGLE = 128
+  LKAS_ANGLE = 64
 
 
 GLOBAL_ES_ADDR = 0x787
@@ -112,9 +110,7 @@ class SubaruPlatformConfig(PlatformConfig):
   dbc_dict: DbcDict = field(default_factory=lambda: {Bus.pt: 'subaru_global_2017_generated'})
 
   def init(self):
-    if self.flags & SubaruFlags.CROSSTREK_HYBRID:
-      self.dbc_dict = {Bus.pt: 'subaru_global_2022_generated'}
-    elif self.flags & SubaruFlags.HYBRID:
+    if self.flags & SubaruFlags.HYBRID:
       self.dbc_dict = {Bus.pt: 'subaru_global_2020_hybrid_generated'}
 
 
@@ -162,7 +158,7 @@ class CAR(Platforms):
   SUBARU_CROSSTREK_HYBRID = SubaruPlatformConfig(
     [SubaruCarDocs("Subaru Crosstrek Hybrid 2020", car_parts=CarParts.common([CarHarness.subaru_b]))],
     CarSpecs(mass=1668, wheelbase=2.67, steerRatio=17),
-    flags=SubaruFlags.HYBRID | SubaruFlags.CROSSTREK_HYBRID,
+    flags=SubaruFlags.HYBRID,
   )
   SUBARU_FORESTER = SubaruPlatformConfig(
     [SubaruCarDocs("Subaru Forester 2019-21", "All")],
