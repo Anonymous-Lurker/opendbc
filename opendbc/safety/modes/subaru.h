@@ -234,7 +234,6 @@ static safety_config subaru_init(uint16_t param) {
   };
 
   const uint16_t SUBARU_PARAM_GEN2 = 1;
-  const uint16_t SUBARU_PARAM_CROSSTREK_HYBRID = 8;
 
   subaru_gen2 = GET_FLAG(param, SUBARU_PARAM_GEN2);
 
