@@ -237,7 +237,6 @@ static safety_config subaru_init(uint16_t param) {
   const uint16_t SUBARU_PARAM_CROSSTREK_HYBRID = 8;
 
   subaru_gen2 = GET_FLAG(param, SUBARU_PARAM_GEN2);
-  bool subaru_crosstrek_hybrid = GET_FLAG(param, SUBARU_PARAM_CROSSTREK_HYBRID);
 
 #ifdef ALLOW_DEBUG
   const uint16_t SUBARU_PARAM_LONGITUDINAL = 2;
