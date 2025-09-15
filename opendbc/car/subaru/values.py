@@ -160,6 +160,11 @@ class CAR(Platforms):
     CarSpecs(mass=1668, wheelbase=2.67, steerRatio=17),
     flags=SubaruFlags.HYBRID,
   )
+  SUBARU_CROSSTREK_2022H = SubaruPlatformConfig(
+    [SubaruCarDocs("Subaru Crosstrek Hybrid 2022", car_parts=CarParts.common([CarHarness.subaru_b]))],
+    CarSpecs(mass=1668, wheelbase=2.67, steerRatio=17),
+    flags=SubaruFlags.HYBRID,
+  )
   SUBARU_FORESTER = SubaruPlatformConfig(
     [SubaruCarDocs("Subaru Forester 2019-21", "All")],
     CarSpecs(mass=1568, wheelbase=2.67, steerRatio=17),

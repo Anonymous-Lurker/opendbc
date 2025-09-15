@@ -226,6 +226,23 @@ FW_VERSIONS = {
   CAR.SUBARU_CROSSTREK_HYBRID: {
     (Ecu.abs, 0x7b0, None): [
       b'\xa2 \x19e\x01',
+    ],
+    (Ecu.eps, 0x746, None): [
+      b'\x9a\xc2\x01\x00',
+    ],
+    (Ecu.fwdCamera, 0x787, None): [
+      b'\x00\x00el\x1f@ #',
+    ],
+    (Ecu.engine, 0x7e0, None): [
+      b'\xd7!`@\x07',
+      b'\xd7!`p\x07',
+      b'\xd7!`p\a',
+      b'\xe9\xf5B0\x00',
+    ],
+  },
+    CAR.SUBARU_CROSSTREK_2022H: {
+    (Ecu.abs, 0x7b0, None): [
+      b'\xa2 \x19e\x01',
       b'\xa2 !e\x01',
     ],
     (Ecu.eps, 0x746, None): [

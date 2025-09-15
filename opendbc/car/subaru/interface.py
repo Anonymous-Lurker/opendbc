@@ -30,6 +30,9 @@ class CarInterface(CarInterfaceBase):
       ret.safetyConfigs = [get_safety_config(structs.CarParams.SafetyModel.subaruPreglobal)]
     else:
       ret.enableBsm = 0x228 in fingerprint[0]
+      # Crosstrek Hybrid '22 puts BSD_RCTA on body/alt bus; enable explicitly
+      if candidate == CAR.SUBARU_CROSSTREK_2022H:
+        ret.enableBsm = True]
       ret.safetyConfigs = [get_safety_config(structs.CarParams.SafetyModel.subaru)]
       if ret.flags & SubaruFlags.GLOBAL_GEN2:
         ret.safetyConfigs[0].safetyParam |= SubaruSafetyFlags.GEN2.value

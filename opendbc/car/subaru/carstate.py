@@ -53,8 +53,10 @@ class CarState(CarStateBase):
                                                                       cp.vl["Dashlights"]["RIGHT_BLINKER"])
 
     if self.CP.enableBsm:
-      ret.leftBlindspot = (cp.vl["BSD_RCTA"]["L_ADJACENT"] == 1) or (cp.vl["BSD_RCTA"]["L_APPROACHING"] == 1)
-      ret.rightBlindspot = (cp.vl["BSD_RCTA"]["R_ADJACENT"] == 1) or (cp.vl["BSD_RCTA"]["R_APPROACHING"] == 1)
+      # 2022H puts BSD on the body/alt bus; everyone else on PT bus
+      cp_bsm = cp_alt if self.CP.carFingerprint == CAR.SUBARU_CROSSTREK_2022H else cp
+      ret.leftBlindspot  = (cp_bsm.vl["BSD_RCTA"]["L_ADJACENT"] == 1) or (cp_bsm.vl["BSD_RCTA"]["L_APPROACHING"] == 1)
+      ret.rightBlindspot = (cp_bsm.vl["BSD_RCTA"]["R_ADJACENT"] == 1) or (cp_bsm.vl["BSD_RCTA"]["R_APPROACHING"] == 1)
 
     cp_transmission = cp_alt if self.CP.flags & SubaruFlags.HYBRID else cp
     can_gear = int(cp_transmission.vl["Transmission"]["Gear"])
