@@ -67,6 +67,7 @@ class CarInterface(CarInterfaceBase):
 
     elif candidate in (CAR.SUBARU_CROSSTREK_HYBRID, CAR.SUBARU_CROSSTREK_2022H):
       ret.steerActuatorDelay = 0.1
+      ret.safetyConfigs[0].safetyParam |= SubaruSafetyFlags.GEN2.value
 
     elif candidate in (CAR.SUBARU_FORESTER, CAR.SUBARU_FORESTER_2022, CAR.SUBARU_FORESTER_HYBRID):
       ret.lateralTuning.init('pid')
