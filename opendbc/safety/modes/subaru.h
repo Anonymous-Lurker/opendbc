@@ -24,6 +24,9 @@
 #define MSG_SUBARU_Throttle              0x40U
 #define MSG_SUBARU_Steering_Torque       0x119U
 #define MSG_SUBARU_Wheel_Speeds          0x13aU
+#define MSG_SUBARU_Brake_Pedal           0x139U
+#define MSG_SUBARU_Brake_Hybrid          0x226U
+#define MSG_SUBARU_Throttle_Hybrid       0x168U
 
 #define MSG_SUBARU_ES_LKAS               0x122U
 #define MSG_SUBARU_ES_Brake              0x220U
@@ -71,6 +74,7 @@
   {.msg = {{MSG_SUBARU_CruiseControl,   alt_bus,         8, 20U, .max_counter = 15U, .ignore_quality_flag = true}, { 0 }, { 0 }}},  \
 
 static bool subaru_gen2 = false;
+static bool subaru_hybrid = false;
 static bool subaru_longitudinal = false;
 
 static uint32_t subaru_get_checksum(const CANPacket_t *msg) {
@@ -92,6 +96,7 @@ static uint32_t subaru_compute_checksum(const CANPacket_t *msg) {
 
 static void subaru_rx_hook(const CANPacket_t *msg) {
   const unsigned int alt_main_bus = subaru_gen2 ? SUBARU_ALT_BUS : SUBARU_MAIN_BUS;
+  const unsigned int wheel_bus = subaru_hybrid ? SUBARU_MAIN_BUS : alt_main_bus;
 
   if ((msg->addr == MSG_SUBARU_Steering_Torque) && (msg->bus == SUBARU_MAIN_BUS)) {
     int torque_driver_new;
@@ -106,13 +111,18 @@ static void subaru_rx_hook(const CANPacket_t *msg) {
   }
 
   // enter controls on rising edge of ACC, exit controls on ACC off
-  if ((msg->addr == MSG_SUBARU_CruiseControl) && (msg->bus == alt_main_bus)) {
+  if (!subaru_hybrid && (msg->addr == MSG_SUBARU_CruiseControl) && (msg->bus == alt_main_bus)) {
     bool cruise_engaged = (msg->data[5] >> 1) & 1U;
     pcm_cruise_check(cruise_engaged);
   }
 
+  if (subaru_hybrid && (msg->addr == MSG_SUBARU_ES_DashStatus) && (msg->bus == SUBARU_CAM_BUS)) {
+    bool cruise_engaged = (GET_BYTES(msg, 4, 4) >> 4) & 1U;
+    pcm_cruise_check(cruise_engaged);
+  }
+
   // update vehicle moving with any non-zero wheel speed
-  if ((msg->addr == MSG_SUBARU_Wheel_Speeds) && (msg->bus == alt_main_bus)) {
+  if ((msg->addr == MSG_SUBARU_Wheel_Speeds) && (msg->bus == wheel_bus)) {
     uint32_t fr = (GET_BYTES(msg, 1, 3) >> 4) & 0x1FFFU;
     uint32_t rr = (GET_BYTES(msg, 3, 3) >> 1) & 0x1FFFU;
     uint32_t rl = (GET_BYTES(msg, 4, 3) >> 6) & 0x1FFFU;
@@ -123,11 +133,19 @@ static void subaru_rx_hook(const CANPacket_t *msg) {
     UPDATE_VEHICLE_SPEED((fr + rr + rl + fl) / 4.0 * 0.057 * KPH_TO_MS);
   }
 
-  if ((msg->addr == MSG_SUBARU_Brake_Status) && (msg->bus == alt_main_bus)) {
+  if ((msg->addr == MSG_SUBARU_Brake_Status) && (msg->bus == wheel_bus)) {
     brake_pressed = (msg->data[7] >> 6) & 1U;
   }
 
-  if ((msg->addr == MSG_SUBARU_Throttle) && (msg->bus == SUBARU_MAIN_BUS)) {
+  if (!subaru_hybrid && (msg->addr == MSG_SUBARU_Throttle) && (msg->bus == SUBARU_MAIN_BUS)) {
+    gas_pressed = msg->data[4] != 0U;
+  }
+
+  if (subaru_hybrid && (msg->addr == MSG_SUBARU_Brake_Hybrid) && (msg->bus == SUBARU_ALT_BUS)) {
+    brake_pressed = (GET_BYTES(msg, 4, 4) >> 5) & 1U;
+  }
+
+  if (subaru_hybrid && (msg->addr == MSG_SUBARU_Throttle_Hybrid) && (msg->bus == SUBARU_ALT_BUS)) {
     gas_pressed = msg->data[4] != 0U;
   }
 }
@@ -233,9 +251,20 @@ static safety_config subaru_init(uint16_t param) {
     SUBARU_COMMON_RX_CHECKS(SUBARU_ALT_BUS)
   };
 
+  static RxCheck subaru_hybrid_rx_checks[] = {
+    {.msg = {{MSG_SUBARU_Steering_Torque, SUBARU_MAIN_BUS, 8, 50U, .max_counter = 15U, .ignore_quality_flag = true}, { 0 }, { 0 }}},
+    {.msg = {{MSG_SUBARU_Brake_Pedal,     SUBARU_MAIN_BUS, 8, 50U, .max_counter = 15U, .ignore_quality_flag = true}, { 0 }, { 0 }}},
+    {.msg = {{MSG_SUBARU_Wheel_Speeds,    SUBARU_MAIN_BUS, 8, 50U, .max_counter = 15U, .ignore_quality_flag = true}, { 0 }, { 0 }}},
+    {.msg = {{MSG_SUBARU_Throttle_Hybrid, SUBARU_ALT_BUS,  8, 25U, .max_counter = 15U, .ignore_quality_flag = true}, { 0 }, { 0 }}},
+    {.msg = {{MSG_SUBARU_Brake_Hybrid,    SUBARU_ALT_BUS,  8, 25U, .ignore_checksum = true, .ignore_counter = true, .ignore_quality_flag = true}, { 0 }, { 0 }}},
+    {.msg = {{MSG_SUBARU_ES_DashStatus,   SUBARU_CAM_BUS,  8, 10U, .max_counter = 15U, .ignore_quality_flag = true}, { 0 }, { 0 }}},
+  };
+
   const uint16_t SUBARU_PARAM_GEN2 = 1;
+  const uint16_t SUBARU_PARAM_HYBRID = 4;
 
   subaru_gen2 = GET_FLAG(param, SUBARU_PARAM_GEN2);
+  subaru_hybrid = GET_FLAG(param, SUBARU_PARAM_HYBRID);
 
 #ifdef ALLOW_DEBUG
   const uint16_t SUBARU_PARAM_LONGITUDINAL = 2;
@@ -243,7 +272,9 @@ static safety_config subaru_init(uint16_t param) {
 #endif
 
   safety_config ret;
-  if (subaru_gen2) {
+  if (subaru_hybrid) {
+    ret = BUILD_SAFETY_CFG(subaru_hybrid_rx_checks, SUBARU_GEN2_TX_MSGS);
+  } else if (subaru_gen2) {
     ret = subaru_longitudinal ? BUILD_SAFETY_CFG(subaru_gen2_rx_checks, SUBARU_GEN2_LONG_TX_MSGS) : \
                                 BUILD_SAFETY_CFG(subaru_gen2_rx_checks, SUBARU_GEN2_TX_MSGS);
   } else {

@@ -34,7 +34,9 @@ class CarInterface(CarInterfaceBase):
       if candidate == CAR.SUBARU_CROSSTREK_2022H:
         ret.enableBsm = False
       ret.safetyConfigs = [get_safety_config(structs.CarParams.SafetyModel.subaru)]
-      if ret.flags & SubaruFlags.GLOBAL_GEN2:
+      if candidate in (CAR.SUBARU_CROSSTREK_HYBRID, CAR.SUBARU_CROSSTREK_2022H, CAR.SUBARU_FORESTER_HYBRID):
+        ret.safetyConfigs[0].safetyParam |= SubaruSafetyFlags.GEN2.value | SubaruSafetyFlags.HYBRID.value
+      elif ret.flags & SubaruFlags.GLOBAL_GEN2:
         ret.safetyConfigs[0].safetyParam |= SubaruSafetyFlags.GEN2.value
 
     ret.steerLimitTimer = 0.4
