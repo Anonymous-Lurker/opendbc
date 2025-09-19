@@ -258,11 +258,11 @@ static safety_config subaru_init(uint16_t param) {
               .ignore_checksum = true, .ignore_counter = true, .ignore_quality_flag = true}, { 0 }, { 0 }}},
     {.msg = {{MSG_SUBARU_Wheel_Speeds,    SUBARU_MAIN_BUS, 8, 50U,
               .ignore_checksum = true, .ignore_counter = true, .ignore_quality_flag = true}, { 0 }, { 0 }}},
-    {.msg = {{MSG_SUBARU_Throttle_Hybrid, SUBARU_ALT_BUS,  8, 40U,
+    {.msg = {{MSG_SUBARU_Throttle_Hybrid, SUBARU_ALT_BUS,  8, 1U,
               .ignore_checksum = true, .ignore_counter = true, .ignore_quality_flag = true}, { 0 }, { 0 }}},
-    {.msg = {{MSG_SUBARU_Brake_Hybrid,    SUBARU_ALT_BUS,  8, 40U,
+    {.msg = {{MSG_SUBARU_Brake_Hybrid,    SUBARU_ALT_BUS,  8, 1U,
               .ignore_checksum = true, .ignore_counter = true, .ignore_quality_flag = true}, { 0 }, { 0 }}},
-    {.msg = {{MSG_SUBARU_ES_DashStatus,   SUBARU_CAM_BUS,  8, 10U,
+    {.msg = {{MSG_SUBARU_ES_DashStatus,   SUBARU_CAM_BUS,  8, 1U,
               .ignore_checksum = true, .ignore_counter = true, .ignore_quality_flag = true}, { 0 }, { 0 }}},
   };
 
