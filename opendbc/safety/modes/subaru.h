@@ -244,6 +244,9 @@ static safety_config subaru_init(uint16_t param) {
   };
 
   static RxCheck subaru_gen2_rx_checks[] = {
+    SUBARU_COMMON_RX_CHECKS(SUBARU_ALT_BUS)
+  };
+
   static RxCheck subaru_cxk_hybrid_rx_checks[] = {
     {.msg = {{MSG_SUBARU_Steering_Torque, SUBARU_MAIN_BUS, 8, 50U, .max_counter = 15U, .ignore_quality_flag = true}, { 0 }, { 0 }}},
     {.msg = {{MSG_SUBARU_Wheel_Speeds,    SUBARU_MAIN_BUS, 8, 50U, .max_counter = 15U, .ignore_quality_flag = true}, { 0 }, { 0 }}},
@@ -252,11 +255,8 @@ static safety_config subaru_init(uint16_t param) {
     {.msg = {{MSG_SUBARU_ES_DashStatus,   SUBARU_CAM_BUS,  8, 20U, .max_counter = 15U, .ignore_quality_flag = true}, { 0 }, { 0 }}},
   };
 
-    SUBARU_COMMON_RX_CHECKS(SUBARU_ALT_BUS)
-  };
-
   const uint16_t SUBARU_PARAM_GEN2 = 1;
-  const uint16_t SUBARU_PARAM_CXK_HYBRID = 4;
+  const uint16_t SUBARU_PARAM_CXK_HYBRID = 8;
 
   subaru_gen2 = GET_FLAG(param, SUBARU_PARAM_GEN2);
   subaru_cxk_hybrid = GET_FLAG(param, SUBARU_PARAM_CXK_HYBRID);
