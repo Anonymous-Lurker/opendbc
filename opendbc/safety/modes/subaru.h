@@ -70,6 +70,8 @@
   {.msg = {{MSG_SUBARU_Brake_Status,    alt_bus,         8, 50U, .max_counter = 15U, .ignore_quality_flag = true}, { 0 }, { 0 }}},  \
   {.msg = {{MSG_SUBARU_CruiseControl,   alt_bus,         8, 20U, .max_counter = 15U, .ignore_quality_flag = true}, { 0 }, { 0 }}},  \
 
+static bool subaru_cxk_hybrid = false;
+
 static bool subaru_gen2 = false;
 static bool subaru_longitudinal = false;
 
@@ -105,10 +107,22 @@ static void subaru_rx_hook(const CANPacket_t *msg) {
     update_sample(&angle_meas, angle_meas_new);
   }
 
-  // enter controls on rising edge of ACC, exit controls on ACC off
-  if ((msg->addr == MSG_SUBARU_CruiseControl) && (msg->bus == alt_main_bus)) {
-    bool cruise_engaged = (msg->data[5] >> 1) & 1U;
-    pcm_cruise_check(cruise_engaged);
+  if (subaru_cxk_hybrid) {
+    if ((msg->addr == 0x226U) && (msg->bus == SUBARU_ALT_BUS)) {
+      brake_pressed = (msg->data[4] >> 5) & 1U;
+    }
+    if ((msg->addr == 0x168U) && (msg->bus == SUBARU_ALT_BUS)) {
+      gas_pressed = msg->data[4] != 0U;
+    }
+    if ((msg->addr == MSG_SUBARU_ES_DashStatus) && (msg->bus == SUBARU_CAM_BUS)) {
+      bool cruise_engaged = (msg->data[5] >> 1) & 1U;
+      pcm_cruise_check(cruise_engaged);
+    }
+  } else {
+    if ((msg->addr == MSG_SUBARU_CruiseControl) && (msg->bus == alt_main_bus)) {
+      bool cruise_engaged = (msg->data[5] >> 1) & 1U;
+      pcm_cruise_check(cruise_engaged);
+    }
   }
 
   // update vehicle moving with any non-zero wheel speed
@@ -230,12 +244,22 @@ static safety_config subaru_init(uint16_t param) {
   };
 
   static RxCheck subaru_gen2_rx_checks[] = {
+  static RxCheck subaru_cxk_hybrid_rx_checks[] = {
+    {.msg = {{MSG_SUBARU_Steering_Torque, SUBARU_MAIN_BUS, 8, 50U, .max_counter = 15U, .ignore_quality_flag = true}, { 0 }, { 0 }}},
+    {.msg = {{MSG_SUBARU_Wheel_Speeds,    SUBARU_MAIN_BUS, 8, 50U, .max_counter = 15U, .ignore_quality_flag = true}, { 0 }, { 0 }}},
+    {.msg = {{0x168U,                     SUBARU_ALT_BUS,  8, 25U, .max_counter = 15U, .ignore_quality_flag = true}, { 0 }, { 0 }}},
+    {.msg = {{0x226U,                     SUBARU_ALT_BUS,  8, 25U, .max_counter = 15U, .ignore_quality_flag = true}, { 0 }, { 0 }}},
+    {.msg = {{MSG_SUBARU_ES_DashStatus,   SUBARU_CAM_BUS,  8, 20U, .max_counter = 15U, .ignore_quality_flag = true}, { 0 }, { 0 }}},
+  };
+
     SUBARU_COMMON_RX_CHECKS(SUBARU_ALT_BUS)
   };
 
   const uint16_t SUBARU_PARAM_GEN2 = 1;
+  const uint16_t SUBARU_PARAM_CXK_HYBRID = 4;
 
   subaru_gen2 = GET_FLAG(param, SUBARU_PARAM_GEN2);
+  subaru_cxk_hybrid = GET_FLAG(param, SUBARU_PARAM_CXK_HYBRID);
 
 #ifdef ALLOW_DEBUG
   const uint16_t SUBARU_PARAM_LONGITUDINAL = 2;
@@ -243,7 +267,10 @@ static safety_config subaru_init(uint16_t param) {
 #endif
 
   safety_config ret;
-  if (subaru_gen2) {
+  if (subaru_cxk_hybrid) {
+    ret = subaru_longitudinal ? BUILD_SAFETY_CFG(subaru_cxk_hybrid_rx_checks, SUBARU_GEN2_LONG_TX_MSGS) : \
+                                BUILD_SAFETY_CFG(subaru_cxk_hybrid_rx_checks, SUBARU_GEN2_TX_MSGS);
+  } else if (subaru_gen2) {
     ret = subaru_longitudinal ? BUILD_SAFETY_CFG(subaru_gen2_rx_checks, SUBARU_GEN2_LONG_TX_MSGS) : \
                                 BUILD_SAFETY_CFG(subaru_gen2_rx_checks, SUBARU_GEN2_TX_MSGS);
   } else {
